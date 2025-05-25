@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Planificador de Actividades</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2ecc71;
+      --danger-color: #e74c3c;
+      --warning-color: #f39c12;
+      --light-bg: #ffffff; /* Cambiado a blanco puro */
+      --dark-bg: #ffffff; /* Cambiado a blanco */
+      --light-card-bg: #ffffff;
+      --dark-card-bg: #34495e;
+      --light-text: #343a40;
+      --dark-text: #ecf0f1;
+      --light-border: #dee2e6;
+      --dark-border: #566573;
+      --shadow-color: rgba(0, 0, 0, 0.08);
+      --border-radius: 8px;
+      --transition-speed: 0.3s;
+      font-family: 'Esphimere', sans-serif; /* Aplicar Esphimere como fuente principal */
+    }
+
+    body {
+      font-family: 'Esphimere', sans-serif; /* Aplicar Esphimere a todo el cuerpo */
+      background-color: #ffffff; /* Cambiado a blanco puro */
+      color: var(--light-text);
+      margin: 0;
+      padding: 15px; /* Reducido padding */
+      font-size: 13px; /* Reducido tamaño base */
+      line-height: 1.5; /* Reducido interlineado base */
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
+
+    body.dark {
+      background-color: #121212; /* Fondo gris oscuro */
+      color: #e0e0e0; /* Texto gris claro */
+    }
+
+    h1, h2, button, input, select, li, span, small {
+      font-family: 'Esphimere', sans-serif; /* Aplicar Esphimere a todos los elementos */
+    }
+
+    h1 {
+      font-size: 3em; /* Agrandado */
+      font-weight: 700;
+      color: var(--primary-color);
+      text-align: center;
+      margin-bottom: 30px; /* Reducido margen */
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    body.dark h1 {
+      color: var(--light-bg);
+    }
+
+    .matrix {
+      display: grid;
+      /* Two columns: 3 parts for main quadrants, 1 part for sidebar */
+      grid-template-columns: 3fr 1fr; /* Ampliado main, reducido sidebar */
+      gap: 20px; /* Reducido gap */
+      /* max-width: 1600px; Removed max-width */
+      margin: 20px auto; /* Reducido margen */
+      width: 100%; /* Aprovechar todo el ancho */
+      box-sizing: border-box; /* Incluir padding en el ancho */
+    }
+
+    /* Container for the main three quadrants */
+    .main-quadrants {
+        display: grid;
+        /* Make them fit available space, min 250px */
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Reducido minmax */
+        gap: 20px; /* Reducido gap */
+        grid-column: 1 / 2; /* Place in the first column of the main matrix */
+    }
+
+    /* Container for the sidebar elements */
+    .sidebar {
+        grid-column: 2 / 3; /* Place in the second column of the main matrix */
+        display: flex;
+        flex-direction: column;
+        gap: 20px; /* Reducido gap */
+    }
+
+
+    .quadrant, .completed-tasks, .team {
+      background-color: var(--light-card-bg);
+      border: 1px solid var(--light-border);
+      border-radius: var(--border-radius);
+      padding: 20px; /* Reducido padding */
+      box-shadow: 0 4px 10px var(--shadow-color); /* Ajustada sombra */
+      transition: background-color var(--transition-speed), border-color var(--transition-speed), box-shadow var (--transition-speed);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .quadrant {
+        min-height: 300px; /* Reducido min-height */
+    }
+
+    .quadrant:hover, .completed-tasks:hover, .team:hover {
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); /* Ajustada sombra hover */
+    }
+
+    body.dark .quadrant, body.dark .completed-tasks, body.dark .team {
+      background-color: #1e1e1e; /* Fondo de tarjetas gris oscuro */
+      border-color: #333333; /* Bordes gris más oscuro */
+      color: #e0e0e0; /* Texto gris claro */
+    }
+
+    .quadrant h2, .completed-tasks h2, .team h2 {
+      font-size: 1.8em; /* Agrandado */
+      font-weight: 500;
+      margin: 0 0 15px 0; /* Reducido margen inferior */
+      padding-bottom: 8px; /* Reducido padding inferior */
+      border-bottom: 2px solid;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .quadrant h2 .title {
+        flex-grow: 1;
+    }
+
+    .quadrant h2 span:last-child {
+      font-size: 0.75em; /* Reducido */
+      font-weight: 400;
+      color: #7f8c8d;
+      margin-left: 8px; /* Reducido */
+      text-align: right;
+    }
+
+    body.dark .quadrant h2 span:last-child {
+        color: #bdc3c7;
+    }
+
+    /* Colores específicos para bordes de cuadrantes */
+    .main-quadrants .quadrant:nth-child(1) { border-top: 4px solid var(--secondary-color); } /* Reducido borde */
+    .main-quadrants .quadrant:nth-child(1) h2 { border-bottom-color: var(--secondary-color); color: var(--secondary-color); }
+
+    .main-quadrants .quadrant:nth-child(2) { border-top: 4px solid var(--primary-color); } /* Reducido borde */
+    .main-quadrants .quadrant:nth-child(2) h2 { border-bottom-color: var(--primary-color); color: var(--primary-color); }
+
+    .main-quadrants .quadrant:nth-child(3) { border-top: 4px solid var(--warning-color); } /* Reducido borde */
+    .main-quadrants .quadrant:nth-child(3) h2 { border-bottom-color: var(--warning-color); color: var(--warning-color); }
+
+    .completed-tasks {
+        min-height: 250px; /* Ajustado */
+        max-height: 450px; /* Ajustado */
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+    .completed-tasks h2 {
+        color: #002a53;
+        border-bottom-color: #bdc3c7;
+    }
+    body.dark .completed-tasks h2 {
+        color: var(--light-bg);
+        border-bottom-color: var(--dark-border);
+    }
+
+    .team {
+        min-height: 180px; /* Ajustado */
+        flex-shrink: 0;
+    }
+    .team h2 {
+        color: #34495e;
+        border-bottom-color: #bdc3c7;
+    }
+     body.dark .team h2 {
+        color: var(--light-bg);
+        border-bottom-color: var(--dark-border);
+    }
+
+    .notes {
+      flex-grow: 1;
+      margin-top: 10px; /* Reducido */
+      padding: 0;
+      list-style: none;
+      overflow-y: auto;
+      max-height: 300px; /* Aumentado para más tareas */
+    }
+
+    .legend {
+      text-align: center;
+      margin-top: 30px; /* Reducido */
+      font-size: 0.85em; /* Reducido */
+      color: #7f8c8d;
+    }
+
+    body.dark .legend {
+      color: #bdc3c7;
+    }
+
+    .controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 10px; /* Espaciado entre botones */
+    }
+
+    button {
+      margin: 4px; /* Reducido */
+      padding: 8px 16px; /* Reducido */
+      font-size: 0.85em; /* Reducido */
+      font-weight: 500;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      background-color: var(--primary-color); /* Fondo igual al color del título del marco */
+      color: white; /* Símbolo en blanco */
+      transition: background-color var(--transition-speed), transform var(--transition-speed);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Ajustado */
+    }
+
+    button:hover {
+      background-color: #1d6fa5; /* Color más oscuro para hover */
+      transform: translateY(-1px); /* Reducido efecto */
+    }
+    button:active {
+        transform: translateY(0);
+    }
+
+    .controls button:first-of-type {
+        background-color: rgb(14, 53, 160); /* Cambiado de morado a negro */
+    }
+    .controls button:first-of-type:hover {
+        background-color: #333; /* Ajustado para hover */
+    }
+    .controls button:last-of-type {
+        background-color: rgb(14, 53, 160); /* Cambiado de morado a negro */
+    }
+    .controls button:last-of-type:hover {
+        background-color: #333; /* Ajustado para hover */
+    }
+
+    .controls button[title*="Oscuro"],
+    .controls button[title*="Limpiar"],
+    .controls button[title*="Excel"] {
+      background: linear-gradient(90deg, #022468 0%, #061f61 100%);
+      color: #fff;
+      border-radius: var(--border-radius);
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.10);
+      border: 2px solid #06203d;
+      transition: background 0.3s, border 0.3s, transform 0.2s;
+      padding: 4px 10px;
+      font-size: 0.75em;
+    }
+    .controls button[title*="Oscuro"]:hover,
+    .controls button[title*="Limpiar"]:hover,
+    .controls button[title*="Excel"]:hover {
+      background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
+      border-color: #1976d2;
+      transform: translateY(-2px) scale(1.04);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li.task {
+      background-color: rgba(0,0,0,0.02);
+      border-radius: 4px;
+      padding: 6px 10px; /* Reducido padding */
+      margin-bottom: 6px; /* Reducido margen */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background-color var(--transition-speed);
+      font-size: 0.9em; /* Reducido tamaño de fuente de tarea */
+      line-height: 1.5; /* Aumentado interlineado de tarea */
+      position: relative;
+      padding-right: 10px; /* Reducido, ya no se necesita espacio para barra vertical */
+    }
+    body.dark li.task {
+        background-color: #2a2a2a; /* Fondo de tareas gris oscuro */
+        color: #d0d0d0; /* Texto gris claro */
+    }
+
+    li.task span {
+        flex-grow: 1;
+        margin-right: 8px; /* Reducido */
+        word-break: break-word;
+    }
+
+    li.task small {
+        display: block;
+        font-size: 0.75em; /* Reducido */
+        color: #7f8c8d;
+        margin-top: 2px; /* Reducido */
+    }
+    body.dark li.task small {
+        color: #a0a0a0; /* Texto pequeño gris medio */
+    }
+
+    .add-task {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px; /* Reducido */
+      margin-bottom: 10px; /* Reducido */
+    }
+
+    .add-task input, .add-task select, .team .add-member input {
+      flex: 1;
+      min-width: 120px; /* Reducido */
+      padding: 8px; /* Reducido */
+      font-size: 0.85em; /* Reducido */
+      border: 1px solid var(--light-border);
+      border-radius: var(--border-radius);
+      background-color: var(--light-bg);
+      color: var(--light-text);
+      transition: border-color var(--transition-speed), background-color var(--transition-speed);
+    }
+    .add-task input:focus, .add-task select:focus, .team .add-member input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); /* Reducido */
+    }
+
+    body.dark .add-task input, body.dark .add-task select, body.dark .team .add-member input {
+        background-color: #1e1e1e; /* Campos de entrada gris oscuro */
+        border-color: #333333; /* Bordes gris oscuro */
+        color: #e0e0e0; /* Texto gris claro */
+    }
+    body.dark .add-task input:focus, body.dark .add-task select:focus, body.dark .team .add-member input:focus {
+        border-color: #555555; /* Bordes gris más claro al enfocar */
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2); /* Sombra blanca translúcida */
+    }
+
+    .add-task button, .task .complete, .task .delete {
+      background-color: var(--primary-color); /* Fondo igual al color del título del marco */
+      color: white; /* Símbolo en blanco */
+    }
+
+    .add-task button:hover, .task .complete:hover, .task .delete:hover {
+      background-color: #1d6fa5; /* Color más oscuro para hover */
+    }
+
+    .add-task button {
+      padding: 8px 12px; /* Reducido */
+      font-size: 1em; /* Reducido */
+      font-weight: bold;
+      background-color: #b0b0b0; /* Escala de grises */
+      color: white;
+      min-width: 35px; /* Reducido */
+      text-align: center;
+    }
+
+    .add-task button:hover {
+      background-color: #909090; /* Escala de grises más oscura */
+    }
+
+    .task button {
+      padding: 4px 8px; /* Reducido */
+      font-size: 0.75em; /* Reducido */
+      margin-left: 4px; /* Reducido */
+    }
+
+    .task .complete {
+      background-color: #b0b0b0; /* Escala de grises */
+    }
+    .task .complete:hover {
+      background-color: #909090; /* Escala de grises más oscura */
+    }
+
+    .task .delete {
+      background-color: #b0b0b0; /* Escala de grises */
+    }
+    .task .delete:hover {
+      background-color: #909090; /* Escala de grises más oscura */
+    }
+
+    #completed-tasks-list li {
+        padding: 5px 10px; /* Reducido */
+        margin-bottom: 5px; /* Reducido */
+        background-color: #e9ecef;
+        border-radius: 4px;
+        font-size: 0.85em; /* Reducido */
+        color: #495057;
+        /* text-decoration: line-through; */ /* Quitado para que no se muestre tachado */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        line-height: 1.4; /* Reducido */
+    }
+    body.dark #completed-tasks-list li {
+        background-color: #2a2a2a; /* Fondo de tareas completadas gris oscuro */
+        color: #d0d0d0; /* Texto gris claro */
+    }
+    #completed-tasks-list li .task-content {
+        flex-grow: 1;
+        margin-right: 8px; /* Reducido */
+    }
+    #completed-tasks-list li small {
+        color: #6c757d;
+        text-decoration: none;
+        margin-left: 8px; /* Reducido */
+        white-space: nowrap;
+        font-size: 0.75em; /* Reducido */
+    }
+    body.dark #completed-tasks-list li small {
+        color: #a0a0a0; /* Texto pequeño gris medio */
+    }
+    #completed-tasks-list li button {
+        background: none;
+        border: none;
+        color: var(--danger-color);
+        cursor: pointer;
+        padding: 0 4px; /* Reducido */
+        font-size: 1em; /* Reducido */
+        flex-shrink: 0;
+    }
+    body.dark #completed-tasks-list li button {
+        color: var(--warning-color);
+    }
+
+    #completed-tasks-list li button.delete-completed {
+        background: none;
+        border: none;
+        color: #2ecc71; /* Verde diferente al equipo */
+        cursor: pointer;
+        padding: 0 4px;
+        font-size: 1em;
+        flex-shrink: 0;
+        border-radius: 50%;
+        transition: background 0.2s, color 0.2s;
+    }
+    #completed-tasks-list li button.delete-completed:hover {
+        background: #eafaf1;
+        color: #27ae60;
+    }
+
+    .team .add-member {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px; /* Reducido */
+      gap: 8px; /* Reducido */
+    }
+
+    .team ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 8px; /* Reducido */
+    }
+
+    .team li {
+      margin-bottom: 5px; /* Reducido */
+      font-size: 0.9em; /* Reducido */
+      padding: 3px 0; /* Reducido */
+      border-bottom: 1px dashed var(--light-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      line-height: 1.4; /* Reducido */
+    }
+    body.dark .team li {
+        border-bottom-color: var(--dark-border);
+    }
+    .team li:last-child {
+        border-bottom: none;
+    }
+    .team li button.delete {
+        margin-left: 8px; /* Reducido */
+        padding: 2px 4px; /* Reducido */
+        font-size: 0.75em; /* Reducido */
+        flex-shrink: 0;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px; /* Reducido */
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--light-bg);
+      border-radius: 10px;
+    }
+    body.dark ::-webkit-scrollbar-track {
+      background: var(--dark-bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #bdc3c7;
+      border-radius: 10px;
+    }
+    body.dark ::-webkit-scrollbar-thumb {
+      background: #566573;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #95a5a6;
+    }
+    body.dark ::-webkit-scrollbar-thumb:hover {
+      background: #7f8c8d;
+    }
+
+    /* --- Personalización de barra horizontal de acciones de tarea --- */
+    .task-actions-horizontal {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 4px;
+      margin-left: 8px;
+    }
+    .task-actions-horizontal button {
+      width: 26px;
+      height: 26px;
+      min-width: 0;
+      min-height: 0;
+      padding: 0;
+      margin: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-color);
+      color: #fff;
+      box-shadow: none;
+      font-size: 1em;
+      transition: background 0.2s;
+    }
+    .task-actions-horizontal button:hover {
+      background: #1d6fa5;
+    }
+    .task-actions-horizontal img,
+    .task-actions-horizontal svg {
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+    @media (max-width: 768px) {
+      .task-actions-horizontal button {
+        width: 22px;
+        height: 22px;
+      }
+      .task-actions-horizontal img,
+      .task-actions-horizontal svg {
+        width: 13px;
+        height: 13px;
+      }
+    }
+
+    @media (max-width: 992px) {
+        .matrix {
+            grid-template-columns: 1fr; /* Stack columns */
+            gap: 15px; /* Ajustado */
+        }
+        .main-quadrants {
+            grid-column: auto;
+            gap: 15px; /* Ajustado */
+        }
+        .sidebar {
+            grid-column: auto;
+            flex-direction: column;
+            gap: 15px; /* Ajustado */
+        }
+        .completed-tasks {
+            min-height: 200px; /* Ajustado */
+            max-height: 350px; /* Ajustado */
+        }
+        .team {
+            min-height: 150px; /* Ajustado */
+        }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 10px; /* Reducido */
+      }
+      h1 {
+        font-size: 1.8em; /* Reducido */
+        margin-bottom: 20px; /* Reducido */
+      }
+      .matrix, .main-quadrants, .sidebar {
+        gap: 10px; /* Reducido */
+      }
+      .quadrant, .completed-tasks, .team {
+        padding: 15px; /* Mantenido */
+        min-height: auto;
+      }
+      .quadrant {
+          min-height: 200px; /* Reducido */
+      }
+      .quadrant h2 {
+        font-size: 1.1em; /* Reducido */
+        margin-bottom: 10px; /* Reducido */
+      }
+      .add-task input, .add-task select, .team .add-member input {
+        min-width: 80px; /* Reducido */
+        padding: 6px; /* Reducido */
+        font-size: 0.8em; /* Reducido */
+      }
+      .add-task button, .team .add-member button {
+          padding: 6px 10px; /* Reducido */
+          font-size: 0.9em; /* Reducido */
+      }
+      button {
+          padding: 6px 12px; /* Reducido */
+          font-size: 0.8em; /* Reducido */
+      }
+      li.task {
+          font-size: 0.85em; /* Reducido */
+          padding: 5px 8px; /* Reducido */
+          margin-bottom: 5px; /* Reducido */
+      }
+      #completed-tasks-list li {
+          font-size: 0.8em; /* Reducido */
+          padding: 4px 8px; /* Reducido */
+          margin-bottom: 4px; /* Reducido */
+      }
+      .team li {
+          font-size: 0.85em; /* Reducido */
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (document.getElementById('date-q2')) {
+        window.flatpickrInstanceQ2 = flatpickr("#date-q2", {
+          dateFormat: "Y-m-d",
+          minDate: "today"
+        });
+        document.getElementById('calendar-icon-q2').onclick = function() {
+          document.getElementById('date-q2').focus();
+          if (window.flatpickrInstanceQ2) window.flatpickrInstanceQ2.open();
+        };
+      }
+      // --- Gestión de actividades en Gestión de Moldes ---
+      const formMoldes = document.getElementById('moldes-form');
+      if (formMoldes) {
+        formMoldes.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const molde = document.getElementById('moldes-molde').value;
+          const pieza = document.getElementById('moldes-pieza').value;
+          const ubicacion = document.getElementById('moldes-ubicacion').value;
+          const responsable = document.getElementById('moldes-responsable').value;
+          const actividad = document.getElementById('moldes-actividad-input').value.trim();
+          if (!molde || !pieza || !ubicacion || !responsable || !actividad) {
+            alert('Por favor, complete todos los campos antes de agregar la actividad.');
+            return;
+          }
+          const lista = document.getElementById('moldes-actividades-list');
+          const li = document.createElement('li');          li.style.display = 'grid';
+          li.style.gridTemplateColumns = 'repeat(5, 1fr)';
+          li.style.gap = '8px';
+          li.style.alignItems = 'center';
+          li.style.padding = '8px';
+          li.style.borderBottom = '1px solid #eee';
+          li.innerHTML = `
+            <div style="text-align:center;overflow-wrap:break-word;">${molde}</div>
+            <div style="text-align:center;overflow-wrap:break-word;">${pieza}</div>
+            <div style="text-align:center;overflow-wrap:break-word;">${ubicacion}</div>
+            <div style="text-align:center;overflow-wrap:break-word;">${responsable}</div>
+            <div style="text-align:center;overflow-wrap:break-word;">${actividad}</div>`;
+          // Botón eliminar
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.title = 'Eliminar actividad';
+          btn.style.background = 'none';
+          btn.style.border = 'none';
+          btn.style.padding = '2px';
+          btn.style.marginLeft = '4px';
+          btn.style.cursor = 'pointer';
+          btn.style.display = 'flex';
+          btn.style.alignItems = 'center';
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+          btn.onclick = function() { li.remove(); };
+          li.appendChild(btn);
+          lista.appendChild(li);
+          formMoldes.reset();
+          // Volver a poner los selects en el placeholder
+          ['moldes-molde','moldes-pieza','moldes-ubicacion','moldes-responsable'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (sel) sel.selectedIndex = 0;
+          });
+        });
+      }
+    });
+  </script>
+</head>
+<body>
+  <!-- Barra de navegación fija -->
+  <nav id="navbar" style="position:fixed;top:0;left:0;width:100vw;height:48px;background:#022468;color:#fff;display:flex;align-items:center;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,0.07);padding:0 24px;">
+    <a href="#" id="home-link" style="color:#fff;text-decoration:none;font-weight:bold;font-size:1.2em;letter-spacing:1px;">Inicio</a>
+    <span style="flex:1"></span>
+    <span id="navbar-user" style="font-size:0.95em;"></span>
+    <button id="logout-btn" style="margin-left:18px;padding:6px 14px;font-size:0.9em;border-radius:6px;border:none;background:#e74c3c;color:#fff;cursor:pointer;display:none;">Cerrar sesión</button>
+  </nav>
+  <div style="height:48px;"></div> <!-- Espacio para la barra -->
+
+  <!-- Página de inicio de sesión -->
+  <div id="login-page" style="max-width:420px;margin:60px auto 0 auto;padding:38px 32px 36px 32px;background:#fff;border-radius:14px;box-shadow:0 2px 20px rgba(0,0,0,0.10);display:block;">
+    <h1 style="text-align:center;color:#022468;margin-bottom:28px;font-size:2.2em;text-transform:uppercase;letter-spacing:1.5px;">PLANIFICADOR DE ACTIVIDADES</h1>
+    <h2 style="text-align:center;margin-bottom:28px;color:#022468;font-size:1.25em;">Iniciar Sesión</h2>
+    <form id="login-form">
+      <label for="login-user">Usuario</label>
+      <input id="login-user" type="text" style="width:100%;margin-bottom:18px;padding:12px 14px;border-radius:8px;border:1px solid #ccc;font-size:1.08em;box-sizing:border-box;" required autocomplete="username" />
+      <label for="login-pass">Contraseña</label>
+      <input id="login-pass" type="password" style="width:100%;margin-bottom:22px;padding:12px 14px;border-radius:8px;border:1px solid #ccc;font-size:1.08em;box-sizing:border-box;" required autocomplete="current-password" />
+      <button type="submit" style="width:100%;padding:12px 0;background:#022468;color:#fff;font-weight:bold;border:none;border-radius:8px;font-size:1.08em;">Entrar</button>
+    </form>
+    <div id="login-error" style="color:#e74c3c;text-align:center;margin-top:14px;display:none;"></div>
+  </div>  <!-- Panel de administración (solo admin) -->  <div id="admin-panel" style="max-width:1400px;margin:40px auto 0 auto;display:none;">
+      <h1 style="text-align:center;color:#022468;margin:0 0 30px 0;font-size:2em;text-transform:uppercase;">PLANIFICADOR DE ACTIVIDADES - ADMINISTRACIÓN</h1>
+      <!-- Panel de Administración de Usuarios -->
+      <div style="display: flex; gap: 24px; align-items: flex-start; width: 100%;">
+        <!-- Panel de Administración de Usuarios -->
+        <div style="background:#f8f9fa;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.06);padding:20px;margin-bottom:30px;width:60%;min-width:340px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="color:#022468;font-size:1.2em;margin:0;">Administrar Usuarios</h2>
+            <button id="go-to-planner-btn" style="padding:6px 12px;background:#3498db;color:#fff;border:none;border-radius:4px;font-weight:500;font-size:0.9em;">Ir al Planificador</button>
+          </div>
+          <form id="user-form" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+            <input id="new-username" type="text" placeholder="Usuario" style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #ccc;font-size:0.9em;" required />
+            <input id="new-password" type="password" placeholder="Contraseña" style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #ccc;font-size:0.9em;" required />
+            <select id="new-role" style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #ccc;font-size:0.9em;">
+              <option value="user">Usuario</option>
+              <option value="admin">Administrador</option>
+            </select>
+            <button type="submit" style="padding:6px 12px;background:#2ecc71;color:#fff;border:none;border-radius:4px;font-weight:500;font-size:0.9em;">Guardar</button>
+          </form>
+          <table style="width:100%;border-collapse:collapse;font-size:0.9em;">
+            <thead><tr style="background:#e9ecef;"><th style="padding:6px 8px;text-align:left;">Usuario</th><th style="padding:6px 8px;text-align:left;">Rol</th><th style="padding:6px 8px;text-align:right;">Acciones</th></tr></thead>
+            <tbody id="users-table"></tbody>
+          </table>
+        </div>
+        <!-- Marco de Listas Desplegables al lado derecho -->
+        <div style="background:#f8f9fa;border-radius:10px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);width:40%;min-width:320px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <h2 style="color:#022468;font-size:1.1em;margin:0;">Listas Desplegables</h2>
+            <span style="color:#666;font-size:0.9em;">Gestión de elementos para formularios</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;">
+            <input id="nuevo-dato" type="text" placeholder="Ingrese el dato" style="flex:2;padding:8px 10px;border-radius:4px;border:1px solid #ccc;font-size:1em;" />
+            <select id="tipo-lista" style="flex:1;padding:8px 10px;border-radius:4px;border:1px solid #ccc;font-size:1em;">
+              <option value="moldes">MOLDES</option>
+              <option value="piezas">PIEZA</option>
+              <option value="ubicaciones">UBICACION</option>
+              <option value="responsables">RESPONSABLE</option>
+            </select>
+            <button onclick="agregarDatoListaUnificada()" style="padding:8px 16px;background:#2ecc71;color:#fff;border:none;border-radius:4px;font-size:1em;display:flex;align-items:center;justify-content:center;">
+              <span class="material-icons" style="font-size:20px;">add_circle</span>
+            </button>
+          </div>
+          <!-- Títulos de listas fuera de los marcos -->
+          <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:4px;">
+            <div style="text-align:center;font-size:0.85em;color:#2c3e50;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Moldes</div>
+            <div style="text-align:center;font-size:0.85em;color:#2c3e50;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Pieza</div>
+            <div style="text-align:center;font-size:0.85em;color:#2c3e50;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Ubicación</div>
+            <div style="text-align:center;font-size:0.85em;color:#2c3e50;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Responsable</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;">
+            <div style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:10px;min-height:120px;display:flex;flex-direction:column;align-items:stretch;">
+              <ul id="lista-moldes" style="list-style:none;padding:0;margin:0;flex:1;overflow-y:auto;font-size:0.85em;"></ul>
+            </div>
+            <div style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:10px;min-height:120px;display:flex;flex-direction:column;align-items:stretch;">
+              <ul id="lista-piezas" style="list-style:none;padding:0;margin:0;flex:1;overflow-y:auto;font-size:0.85em;"></ul>
+            </div>
+            <div style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:10px;min-height:120px;display:flex;flex-direction:column;align-items:stretch;">
+              <ul id="lista-ubicaciones" style="list-style:none;padding:0;margin:0;flex:1;overflow-y:auto;font-size:0.85em;"></ul>
+            </div>
+            <div style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:10px;min-height:120px;display:flex;flex-direction:column;align-items:stretch;">
+              <ul id="lista-responsables" style="list-style:none;padding:0;margin:0;flex:1;overflow-y:auto;font-size:0.85em;"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Contenido principal (planificador) -->
+  <div id="main-content" style="display:none;">
+    <h1 style="text-align:center;color:#022468;margin:20px 0;font-size:2em;text-transform:uppercase;">PLANIFICADOR DE ACTIVIDADES</h1>
+
+    <div class="controls">
+      <button onclick="toggleDarkMode()" title="Modo Oscuro / Claro">
+        <!-- Sun/Moon icon -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <span style="margin-left:6px;">Modo Oscuro / Claro</span>
+      </button>
+      <button onclick="clearAll()" title="Limpiar Todo">
+        <!-- Eraser icon -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 4.24a3 3 0 0 0-4.24 0L3 17.24a2 2 0 0 0 0 2.83l1.93 1.93a2 2 0 0 0 2.83 0l13-13a3 3 0 0 0 0-4.24z"></path><line x1="6" y1="19" x2="19" y2="6"></line></svg>
+        <span style="margin-left:6px;">Limpiar Todo</span>
+      </button>
+      <button onclick="exportToExcel()" title="Exportar a Excel">
+        <!-- Spreadsheet icon -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span style="margin-left:6px;">Exportar a Excel</span>
+      </button>
+    </div>
+
+    <div class="matrix">
+      <!-- Main Quadrants Container -->
+      <div class="main-quadrants">
+          <div class="quadrant">
+            <h2><span class="title">HACER</span> <span>Importante y Urgente</span></h2>
+            <div class="add-task">
+              <input type="text" placeholder="Nueva tarea..." id="input-q1" />
+              <button onclick="addTask('q1', 'input-q1')" title="Añadir tarea">
+                <!-- Plus in circle icon -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              </button>
+            </div>
+            <ul class="notes" id="q1"></ul>
+          </div>
+          <div class="quadrant">
+            <h2><span class="title">PLANIFICAR</span> <span>Importante, No Urgente</span></h2>
+            <div class="add-task" style="position:relative;">
+              <input type="text" placeholder="Nueva tarea..." id="input-q2" />
+              <span style="cursor:pointer;display:flex;align-items:center;position:relative;" id="calendar-icon-q2" title="Seleccionar fecha">
+                <span class="material-icons" style="font-size:22px;color:#1976d2;">event</span>
+              </span>
+              <input type="text" id="date-q2" placeholder="Fecha" style="margin-left:8px;width:90px;" readonly />
+              <button onclick="addTask('q2', 'input-q2', null, 'date-q2')" title="Añadir tarea">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              </button>
+            </div>
+            <ul class="notes" id="q2"></ul>
+          </div>
+          <div class="quadrant">
+            <h2><span class="title">DELEGAR</span> <span>Urgente, No Importante</span></h2>
+            <div class="add-task">
+              <input type="text" placeholder="Nueva tarea..." id="input-q3" />
+              <select id="delegate-to" onchange="toggleCustomDelegateInput()">
+                <option value="">Seleccionar persona</option>
+                <!-- Opciones de usuarios se llenan dinámicamente -->
+                <option value="__custom__">Otro (escribir nombre)</option>
+              </select>
+              <input type="text" id="custom-delegate-input" placeholder="Nombre personalizado" style="display:none;" />
+              <button onclick="addTask('q3', 'input-q3', 'delegate-to', null, 'custom-delegate-input')" title="Añadir y delegar tarea">
+                <!-- Plus in circle icon -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              </button>
+            </div>
+            <ul class="notes" id="q3"></ul>
+          </div>
+          <!-- "ELIMINAR" Quadrant Removed -->
+      </div>
+
+      <!-- Sidebar Container -->
+      <div class="sidebar">
+          <div class="completed-tasks">
+            <h2>TAREAS CUMPLIDAS</h2>
+            <ul id="completed-tasks-list"></ul>
+          </div>
+          <!-- Eliminada la sección de equipo de trabajo -->
+      </div>
+
+    </div>    <!-- Módulo Gestión de Moldes -->
+    <div id="gestion-moldes" style="max-width:1200px;width:90%;margin:30px auto;padding:32px;background:#fff;border-radius:12px;box-shadow:0 2px 20px rgba(0,0,0,0.08);">
+      <h2 style="color:#022468;text-align:center;margin-bottom:28px;font-size:1.8em;">GESTIÓN DE MOLDES</h2>
+      <form id="moldes-form" style="display:grid;grid-template-columns:repeat(5, 1fr);gap:16px;margin-bottom:24px;">
+        <div>
+          <label for="moldes-molde" style="display:block;margin-bottom:8px;color:#333;font-weight:500;">Molde</label>
+          <select id="moldes-molde" required style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:1em;"></select>
+        </div>
+        <div>
+          <label for="moldes-pieza" style="display:block;margin-bottom:8px;color:#333;font-weight:500;">Pieza</label>
+          <select id="moldes-pieza" required style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:1em;"></select>
+        </div>
+        <div>
+          <label for="moldes-ubicacion" style="display:block;margin-bottom:8px;color:#333;font-weight:500;">Ubicación</label>
+          <select id="moldes-ubicacion" required style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:1em;"></select>
+        </div>
+        <div>
+          <label for="moldes-responsable" style="display:block;margin-bottom:8px;color:#333;font-weight:500;">Responsable</label>
+          <select id="moldes-responsable" required style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:1em;"></select>
+        </div>
+        <div>
+          <label for="moldes-actividad-input" style="display:block;margin-bottom:8px;color:#333;font-weight:500;">Actividad</label>
+          <input id="moldes-actividad-input" name="moldes-actividad-input" type="text" required style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:1em;" placeholder="Ingrese la actividad" autocomplete="off" />
+        </div>
+        <button type="submit" style="grid-column:1/-1;padding:12px;background:#022468;color:#fff;border:none;border-radius:8px;font-size:1.1em;font-weight:500;cursor:pointer;transition:background 0.3s ease;">Agregar Actividad</button>
+      </form>
+
+      <!-- Headers for activities list -->
+      <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:24px;padding:12px;background:#f8f9fa;border-radius:8px;">
+        <div style="font-weight:600;color:#022468;text-align:center;">MOLDE</div>
+        <div style="font-weight:600;color:#022468;text-align:center;">PIEZA</div>
+        <div style="font-weight:600;color:#022468;text-align:center;">UBICACIÓN</div>
+        <div style="font-weight:600;color:#022468;text-align:center;">RESPONSABLE</div>
+        <div style="font-weight:600;color:#022468;text-align:center;">ACTIVIDAD</div>
+      </div>
+      <ul id="moldes-actividades-list" style="margin-top:12px;list-style:none;padding:0;max-height:400px;overflow-y:auto;"></ul>
+    </div>    <div class="legend">
+      <!-- Removed the text about "Importante" and "Urgente" -->
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer style="
+    text-align: center;
+    padding: 20px;
+    background-color: #022468;
+    color: white;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    left: 0;
+    font-size: 0.9em;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;">
+    Diseñado y creado por Angel Felipe Altamirano Tapias - 2025
+  </footer>
+
+  <div style="height: 70px;"></div> <!-- Spacer to prevent content from being hidden behind fixed footer -->
+
+  <script>// --- Gestión de usuarios y autenticación ---
+    const usersKey = 'eisenhowerUsers';
+    let currentUser = null;
+    
+    // Asegurarse de que localStorage está disponible
+    function isLocalStorageAvailable() {
+      try {
+        localStorage.setItem('test', 'test');
+        localStorage.removeItem('test');
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function getUsers() {
+      try {
+        // Intentar obtener usuarios del localStorage
+        let users = JSON.parse(localStorage.getItem(usersKey) || '[]');
+        // Asegurar que el usuario admin existe
+        if (!users.some(u => u.username === 'admin')) {
+          const adminUser = { username: 'admin', password: 'admin123', role: 'admin' };
+          users = [...users, adminUser];
+        }
+        // Asegurar que al menos un usuario normal existe
+        if (!users.some(u => u.role !== 'admin')) {
+          const demoUser = { username: 'usuario', password: 'usuario123', role: 'user' };
+          users = [...users, demoUser];
+        }
+        localStorage.setItem(usersKey, JSON.stringify(users));
+        return users;
+      } catch (error) {
+        console.error('Error al obtener usuarios:', error);
+        // En caso de error, reiniciar con el usuario admin y un usuario normal
+        const defaultUsers = [
+          { username: 'admin', password: 'admin123', role: 'admin' },
+          { username: 'usuario', password: 'usuario123', role: 'user' }
+        ];
+        localStorage.setItem(usersKey, JSON.stringify(defaultUsers));
+        return defaultUsers;
+      }
+    }
+
+    function saveUsers(users) {
+      try {
+        localStorage.setItem(usersKey, JSON.stringify(users));
+        return true;
+      } catch (error) {
+        console.error('Error al guardar usuarios:', error);
+        return false;
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('login-page').style.display = 'block';
+      document.getElementById('main-content').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'none';
+      document.getElementById('logout-btn').style.display = 'none';
+      document.getElementById('navbar-user').textContent = '';
+      // Solo limpiar si existen los elementos
+      const teamList = document.getElementById('team-list');
+      if (teamList) teamList.innerHTML = '';
+      const delegateTo = document.getElementById('delegate-to');
+      if (delegateTo) delegateTo.innerHTML = '<option value="">Seleccionar persona</option>';
+      const q1 = document.getElementById('q1');
+      if (q1) q1.innerHTML = '';
+      const q2 = document.getElementById('q2');
+      if (q2) q2.innerHTML = '';
+      const q3 = document.getElementById('q3');
+      if (q3) q3.innerHTML = '';
+      const completedTasksList = document.getElementById('completed-tasks-list');
+      if (completedTasksList) completedTasksList.innerHTML = '';
+    }
+
+    function showMain() {
+      document.getElementById('login-page').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      document.getElementById('logout-btn').style.display = 'inline-block';
+      document.getElementById('admin-panel').style.display = 'none';
+      document.getElementById('navbar-user').textContent = currentUser ? `Usuario: ${currentUser.username} (${currentUser.role})` : '';
+
+      // Mostrar/ocultar el módulo de gestión de moldes según el rol del usuario
+      const gestionMoldes = document.getElementById('gestion-moldes');
+      if (gestionMoldes) {
+        gestionMoldes.style.display = currentUser && currentUser.role === 'admin' ? 'block' : 'none';
+      }
+
+      ensurePlanificarInputs();
+      fillDelegateSelect();
+      // Mostrar/ocultar input manual según selección
+      const delegateTo = document.getElementById('delegate-to');
+      if (delegateTo) delegateTo.onchange = toggleCustomDelegateInput;
+      // Asegura que el input manual esté oculto al entrar
+      const customInput = document.getElementById('custom-delegate-input');
+      if (customInput) customInput.style.display = 'none';
+      loadTasks();
+      cleanDelegarForCurrentUser();
+      loadCompletedTasks();
+      cargarTodasLasListas();
+      initDropdownAndMoldesModules();
+    }
+
+    function showAdminPanel() {
+      document.getElementById('login-page').style.display = 'none';
+      document.getElementById('main-content').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'block';
+      document.getElementById('logout-btn').style.display = 'inline-block';
+      document.getElementById('navbar-user').textContent = currentUser ? `Usuario: ${currentUser.username} (${currentUser.role})` : '';
+      renderUsersTable();
+      cargarTodasLasListas();
+      initDropdownAndMoldesModules();
+      // Reasignar el evento del botón cada vez que se muestra el panel
+      const goToPlannerBtn = document.getElementById('go-to-planner-btn');
+      if (goToPlannerBtn) {
+        goToPlannerBtn.onclick = function() {
+          // Simplemente mostrar el planificador con el usuario currentUser (admin)
+          showMain();
+        };
+      }
+    }
+
+    function renderUsersTable() {
+      const users = getUsers();
+      const tbody = document.getElementById('users-table');
+      tbody.innerHTML = '';
+      users.forEach((user, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${user.username}</td><td>${user.role}</td><td>
+          <button onclick="editUser(${idx})" style="background:#f39c12;color:#fff;border:none;border-radius:4px;padding:3px 8px;margin-right:4px;">Editar</button>
+          ${user.username !== 'admin' ? `<button onclick="deleteUser(${idx})" style="background:#e74c3c;color:#fff;border:none;border-radius:4px;padding:3px 8px;">Eliminar</button>` : ''}
+        </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editUser(idx) {
+      const users = getUsers();
+      const user = users[idx];
+      document.getElementById('new-username').value = user.username;
+      document.getElementById('new-password').value = user.password;
+      document.getElementById('new-role').value = user.role;
+      document.getElementById('user-form').dataset.editing = idx;
+    }
+
+    function deleteUser(idx) {
+      if (!confirm('¿Eliminar este usuario?')) return;
+      const users = getUsers();
+      if (users[idx].username === 'admin') return;
+      users.splice(idx, 1);
+      saveUsers(users);
+      renderUsersTable();
+    }
+
+    document.getElementById('login-form').onsubmit = function(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-user').value.trim();
+      const password = document.getElementById('login-pass').value;
+      
+      if (!username || !password) {
+        document.getElementById('login-error').textContent = 'Por favor, ingrese usuario y contraseña.';
+        document.getElementById('login-error').style.display = 'block';
+        return;
+      }
+
+      try {
+        const users = getUsers(); // Esto asegura que admin existe
+        const user = users.find(u => u.username === username && u.password === password);
+        
+        if (user) {
+          currentUser = user;
+          document.getElementById('login-error').style.display = 'none';
+          if (user.role === 'admin') {
+            showAdminPanel();
+          } else {
+            showMain();
+          }
+        } else {
+          document.getElementById('login-error').textContent = 'Usuario o contraseña incorrectos.';
+          document.getElementById('login-error').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error en el login:', error);
+        document.getElementById('login-error').textContent = 'Error al intentar iniciar sesión. Por favor, intente nuevamente.';
+        document.getElementById('login-error').style.display = 'block';
+      }
+    };
+
+    document.getElementById('user-form').onsubmit = function(e) {
+      e.preventDefault();
+      const username = document.getElementById('new-username').value.trim();
+      const password = document.getElementById('new-password').value;
+      const role = document.getElementById('new-role').value;
+      if (!username || !password) return;
+      let users = getUsers();
+      const editing = this.dataset.editing;
+      if (editing !== undefined && editing !== '') {
+        users[editing] = { username, password, role };
+        this.dataset.editing = '';
+      } else {
+        if (users.some(u => u.username === username)) {
+          alert('El usuario ya existe.');
+          return;
+        }
+        users.push({ username, password, role });
+      }
+      saveUsers(users);
+      renderUsersTable();
+      this.reset();
+    };
+
+    document.getElementById('logout-btn').onclick = function() {
+      currentUser = null;
+      showLogin();
+    };
+
+    document.getElementById('home-link').onclick = function(e) {
+      e.preventDefault();
+      if (!currentUser) {
+        showLogin();
+      } else if (currentUser.role === 'admin') {
+        showAdminPanel();
+      } else {
+        showMain();
+      }
+    };
+
+    // Mostrar login al cargar
+    document.addEventListener('DOMContentLoaded', function() {
+      // Asegurar que el sistema de usuarios está inicializado
+      getUsers();
+      // Solo mostrar login si NO hay usuario autenticado
+      if (!currentUser) {
+        showLogin();
+        // Limpiar campos de login
+        document.getElementById('login-user').value = '';
+        document.getElementById('login-pass').value = '';
+        document.getElementById('login-error').style.display = 'none';
+      }
+      // Agregar eventos de entrada para las listas
+      const tipos = ['molde', 'pieza', 'destino', 'responsable', 'actividad'];
+      tipos.forEach(tipo => {
+        const input = document.getElementById(`new-${tipo}`);
+        if (input) {
+          input.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              agregarItem(tipo);
+            }
+          });
+        }
+      });
+    });
+
+    // --- Gestión del Equipo ---
+    const teamKey = 'eisenhowerTeamMembers'; // Clave única para evitar conflictos
+    const completedTasksKey = 'eisenhowerCompletedTasks'; // Clave única
+    const darkModeKey = 'eisenhowerDarkMode';
+
+    // --- Gestión de claves personalizadas por usuario ---
+    function getUserKey(suffix) {
+      if (!currentUser || !currentUser.username) return suffix;
+      return `planificador_${currentUser.username}_${suffix}`;
+    }
+
+    // --- Modificar funciones para usar claves por usuario ---
+    function loadTeamMembers() {
+      const savedTeam = localStorage.getItem(getUserKey('team'));
+      const teamList = savedTeam ? JSON.parse(savedTeam) : [];
+      const teamUl = document.getElementById('team-list');
+      const delegateSelect = document.getElementById('delegate-to');
+      teamUl.innerHTML = '';
+      delegateSelect.innerHTML = '<option value="">Seleccionar persona</option>';
+      teamList.forEach(member => {
+        appendTeamMemberToList(member, teamUl);
+        appendTeamMemberToSelect(member, delegateSelect);
+      });
+    }
+
+    function saveTeamMembers() {
+      const teamUl = document.getElementById('team-list');
+      const members = Array.from(teamUl.children).map(li => {
+        const nameSpan = li.firstChild;
+        return nameSpan ? nameSpan.textContent.trim() : '';
+      }).filter(name => name);
+      localStorage.setItem(getUserKey('team'), JSON.stringify(members));
+    }
+
+    function loadTasks() {
+      const quadrantIds = ["q1", "q2", "q3"];
+      quadrantIds.forEach(id => {
+        const saved = localStorage.getItem(getUserKey(id));
+        if (saved) {
+          document.getElementById(id).innerHTML = saved;
+          // Re-attach event listeners for buttons inside loaded tasks
+          attachTaskButtonListeners(document.getElementById(id));
+        }
+      });
+      sortPlanificarTasks();
+    }
+
+    function saveTasks() {
+      const quadrantIds = ["q1", "q2", "q3"];
+      quadrantIds.forEach(id => {
+        localStorage.setItem(getUserKey(id), document.getElementById(id).innerHTML);
+      });
+    }
+
+    function loadCompletedTasks() {
+      const savedCompletedTasks = localStorage.getItem(getUserKey('completed'));
+      const completedList = savedCompletedTasks ? JSON.parse(savedCompletedTasks) : [];
+      const completedUl = document.getElementById('completed-tasks-list');
+      completedUl.innerHTML = '';
+      completedList.forEach(taskData => {
+        const li = document.createElement('li');
+        const contentSpan = document.createElement('span');
+        contentSpan.className = 'task-content';
+        contentSpan.innerHTML = taskData.content;
+        li.appendChild(contentSpan);
+        const permDeleteBtn = document.createElement('button');
+        permDeleteBtn.className = 'delete-completed';
+        permDeleteBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M9 10v6"/><path d="M15 10v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="1" y1="6" x2="23" y2="6"/></svg>';
+        permDeleteBtn.title = 'Eliminar permanentemente';
+        permDeleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          if(confirm('¿Eliminar esta tarea completada permanentemente?')) {
+            li.remove();
+            saveCompletedTasks();
+          }
+        };
+        li.appendChild(permDeleteBtn);
+        completedUl.appendChild(li);
+      });
+    }
+
+    function saveCompletedTasks() {
+      const completedUl = document.getElementById('completed-tasks-list');
+      const tasksData = Array.from(completedUl.children).map(li => {
+        const contentSpan = li.querySelector('.task-content');
+        return {
+          content: contentSpan ? contentSpan.innerHTML : ''
+        };
+           });
+      localStorage.setItem(getUserKey('completed'), JSON.stringify(tasksData));
+    }
+
+    function addTeamMember() {
+      const input = document.getElementById('team-member-input');
+      const memberName = input.value.trim();
+      if (memberName) {
+        const teamUl = document.getElementById('team-list');
+        const delegateSelect = document.getElementById('delegate-to');
+
+        // Evitar duplicados
+        const existingMembers = Array.from(teamUl.children).map(li => {
+             const nameSpan = li.firstChild;
+             return nameSpan ? nameSpan.textContent.trim() : '';
+        });
+        if (existingMembers.includes(memberName)) {
+            alert('Este miembro ya existe en el equipo.');
+            return;
+        }
+
+        appendTeamMemberToList(memberName, teamUl);
+        appendTeamMemberToSelect(memberName, delegateSelect);
+
+        saveTeamMembers();
+        input.value = '';
+      } else {
+        alert('Por favor, ingresa un nombre válido.');
+      }
+    }
+
+    function appendTeamMemberToList(name, ul) {
+        const li = document.createElement('li');
+        // Add name as text node to easily separate from button later
+        li.appendChild(document.createTextNode(name));
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-2 14H7L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><line x1="1" y1="6" x2="23" y2="6"/></svg>';
+        deleteBtn.className = 'delete'; // Use delete style
+        deleteBtn.title = `Eliminar a ${name}`;
+        deleteBtn.onclick = () => removeTeamMember(name);
+        li.appendChild(deleteBtn); // Append button after the name
+        ul.appendChild(li);
+    }
+
+    function removeTeamMember(name) {
+      // Buscar y eliminar el miembro del equipo
+      const teamUl = document.getElementById('team-list');
+      const liToRemove = Array.from(teamUl.children).find(li => li.firstChild && li.firstChild.textContent.trim() === name);
+      if (liToRemove) liToRemove.remove();
+
+      // Eliminar del select
+      const delegateSelect = document.getElementById('delegate-to');
+      const optionToRemove = Array.from(delegateSelect.options).find(opt => opt.value === name);
+      if (optionToRemove) optionToRemove.remove();
+
+      saveTeamMembers(); // Guardar cambios
+    }
+
+    // --- Gestión de Tareas ---
+    function loadTasks() {
+      const quadrantIds = ["q1", "q2", "q3"];
+      quadrantIds.forEach(id => {
+        const saved = localStorage.getItem(getUserKey(id));
+        if (saved) {
+          document.getElementById(id).innerHTML = saved;
+          // Re-attach event listeners for buttons inside loaded tasks
+          attachTaskButtonListeners(document.getElementById(id));
+        }
+      });
+      sortPlanificarTasks();
+    }
+
+    function saveTasks() {
+      const quadrantIds = ["q1", "q2", "q3"];
+      quadrantIds.forEach(id => {
+        localStorage.setItem(getUserKey(id), document.getElementById(id).innerHTML);
+      });
+    }
+
+    function addTask(quadrantId, inputId, delegateId = null, dateId = null, customDelegateId = null) {
+      const input = document.getElementById(inputId);
+      const taskText = input.value.trim();
+      let delegateTo = '';
+      let taskDate = '';
+
+      if (delegateId) {
+        const delegateSelect = document.getElementById(delegateId);
+        delegateTo = delegateSelect ? delegateSelect.value : '';
+        if (delegateTo === '__custom__' && customDelegateId) {
+          const customDelegateInput = document.getElementById(customDelegateId);
+          delegateTo = customDelegateInput ? customDelegateInput.value.trim() : '';
+          if (!delegateTo) {
+            alert('Por favor, ingresa un nombre válido para delegar la tarea.');
+            return;
+          }
+        } else if (delegateTo === '') {
+          alert('Por favor, selecciona una persona a quien delegar la tarea.');
+          return;
+        }
+      }
+
+      if (dateId && quadrantId === 'q2') {
+        const dateInput = document.getElementById(dateId);
+        taskDate = dateInput ? dateInput.value : '';
+        if (!taskDate) {
+          alert('Por favor, selecciona la fecha en la que se realizará la tarea.');
+          return;
+        }
+      }
+
+      if (taskText) {
+        const now = new Date();
+        const timestamp = now.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+
+        // Si es DELEGAR y usuario destino es válido y NO es personalizado, COPIAR SOLO en q4 del destinatario
+        if (quadrantId === 'q3' && delegateId && delegateTo && delegateTo !== '__custom__') {
+          // Construir la tarea para el destinatario, incluyendo el nombre del usuario que delega
+          const delegador = currentUser && currentUser.username ? currentUser.username : '';
+          const tareaHTML = `
+            <li class="task" data-timestamp="${now.toISOString()}">
+              <span><strong style="color: var(--primary-color);">${delegador}:</strong> ${taskText}<small>(Recibida: ${timestamp})</small></span>
+              <div class="task-actions-horizontal">
+                <button class="complete" title="Marcar como completada">
+                  <img src="https://img.icons8.com/color/48/000000/checkmark.png" alt="Completada" width="18" height="18"/>
+                </button>
+                <button class="delete" title="Eliminar tarea">
+                  <img src="https://img.icons8.com/color/48/000000/delete-sign.png" alt="Eliminar" width="18" height="18"/>
+                </button>
+              </div>
+            </li>`;
+          // Obtener las tareas actuales del destinatario
+          const q4Key = `planificador_${delegateTo}_q4`;
+          let tareasQ4 = localStorage.getItem(q4Key) || '';
+          tareasQ4 += tareaHTML;
+          localStorage.setItem(q4Key, tareasQ4);
+          // Ahora, agregar la tarea en q3 SOLO para el usuario actual (no para el destinatario)
+        }
+
+        // Agregar la tarea en el cuadrante correspondiente del usuario actual
+        const ul = document.getElementById(quadrantId);
+        const li = document.createElement('li');
+        li.className = 'task';
+        li.dataset.timestamp = now.toISOString();
+        if (quadrantId === 'q2') {
+          li.dataset.taskdate = taskDate;
+        }
+        li.innerHTML = `
+          <span>
+            ${delegateTo ? `<strong style='color: var(--primary-color);'>${delegateTo}:</strong> ` : ''}${taskText}
+            ${quadrantId === 'q2' && taskDate ? `<small><strong style="color: var(--primary-color);">Fecha límite: ${taskDate}</strong></small>` : ''}
+            <small>${quadrantId === 'q2' ? 'Fecha de ingreso: ' + timestamp : '(' + timestamp + ')'}</small>
+          </span>
+          <div class="task-actions-horizontal">
+            <button class="move-up" title="Subir tarea">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </button>
+            <button class="move-down" title="Bajar tarea">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <button class="complete" title="Marcar como completada">
+              <img src="https://img.icons8.com/color/48/000000/checkmark.png" alt="Completada" width="18" height="18"/>
+            </button>
+            <button class="delete" title="Eliminar tarea">
+              <img src="https://img.icons8.com/color/48/000000/delete-sign.png" alt="Eliminar" width="18" height="18"/>
+            </button>
+          </div>
+        `;
+        ul.appendChild(li);
+        attachTaskButtonListeners(li);
+        input.value = '';
+        if (delegateId) document.getElementById(delegateId).selectedIndex = 0;
+        if (customDelegateId) document.getElementById(customDelegateId).value = '';
+        if (dateId && quadrantId === 'q2') document.getElementById(dateId).value = '';
+        saveTasks();
+        if (quadrantId === 'q2') sortPlanificarTasks();
+      } else {
+        alert('Por favor, ingresa el texto de la tarea.');
+      }
+    }
+
+    function attachTaskButtonListeners(parentElement) {
+        const completeButtons = parentElement.querySelectorAll('.complete');
+        const deleteButtons = parentElement.querySelectorAll('.delete');
+        const moveUpButtons = parentElement.querySelectorAll('.move-up');
+        const moveDownButtons = parentElement.querySelectorAll('.move-down');
+
+        completeButtons.forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            newButton.addEventListener('click', () => markComplete(newButton));
+        });
+
+        deleteButtons.forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            newButton.addEventListener('click', () => deleteTask(newButton));
+        });
+
+        moveUpButtons.forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            newButton.addEventListener('click', () => moveTask(newButton, -1));
+        });
+        moveDownButtons.forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            newButton.addEventListener('click', () => moveTask(newButton, 1));
+        });
+    }
+
+    function moveTask(button, direction) {
+        const li = button.closest('li.task');
+        if (!li) return;
+        const ul = li.parentElement;
+        const siblings = Array.from(ul.children);
+        const index = siblings.indexOf(li);
+        if (direction === -1 && index > 0) {
+            ul.insertBefore(li, siblings[index - 1]);
+            saveTasks();
+        } else if (direction === 1 && index < siblings.length - 1) {
+            ul.insertBefore(siblings[index + 1], li);
+            saveTasks();
+        }
+    }
+
+    function sortPlanificarTasks() {
+                    
+
+                         
+
+      const ul = document.getElementById('q2');
+      const tasks = Array.from(ul.children);
+      tasks.sort((a, b) => {
+        const dateA = a.dataset.taskdate || '';
+        const dateB = b.dataset.taskdate || '';
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateA.localeCompare(dateB);
+      });
+      tasks.forEach(li => ul.appendChild(li));
+    }
+
+    // --- PLANIFICAR: agrega input de fecha y botón ---
+    // Busca el cuadrante PLANIFICAR y agrega los campos si no existen
+    function ensurePlanificarInputs() {
+      // Selecciona el segundo cuadrante (Planificar)
+      const planificarQuadrant = document.querySelector('.main-quadrants .quadrant:nth-child(2)');
+      if (!planificarQuadrant) return;
+      // Asegura que exista el contenedor .add-task
+      let addTaskDiv = planificarQuadrant.querySelector('.add-task');
+      if (!addTaskDiv) {
+        addTaskDiv = document.createElement('div');
+        addTaskDiv.className = 'add-task';
+        planificarQuadrant.insertBefore(addTaskDiv, planificarQuadrant.firstChild);
+      }
+      // Si ya existe el input, no volver a crear
+      if (!document.getElementById('input-q2')) {
+        addTaskDiv.innerHTML = `
+          <input type="text" id="input-q2" placeholder="Nueva tarea" style="width:60%;margin-right:6px;" />
+          <span id="calendar-icon-q2" style="cursor:pointer;display:inline-flex;align-items:center;position:relative;vertical-align:middle;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#022468" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x="16" y="2" x2="16" y2="6"/><line x="8" y1="2" x2="8" y2="6"/><line x="3" y="10" x2="21" y2="10"/></svg>
+          </span>
+          <input type="date" id="date-q2" style="margin-right:2px;vertical-align:middle;display:none;" />
+          <button id="add-q2-btn" title="Agregar tarea">+</button>
+        `;
+        // Evento para el icono de calendario
+        const calendarIcon = document.getElementById('calendar-icon-q2');
+        const dateInput = document.getElementById('date-q2');
+        if (calendarIcon && dateInput) {
+          calendarIcon.onclick = function(e) {
+            e.preventDefault();
+            dateInput.style.display = 'inline-block';
+            dateInput.focus();
+            if (dateInput.showPicker) {
+              dateInput.showPicker();
+            }
+          };
+          // Ocultar el input date cuando se selecciona una fecha o pierde el foco
+
+          dateInput.addEventListener('change', function() {
+            dateInput.style.display = 'none';
+          });
+          dateInput.addEventListener('blur', function() {
+            setTimeout(() => { dateInput.style.display = 'none'; }, 150);
+          });
+        }
+        // Evento para agregar tarea
+        const addBtn = document.getElementById('add-q2-btn');
+        if (addBtn) {
+          addBtn.onclick = function() {
+            addTask('q2', 'input-q2', null, 'date-q2');
+          };
+        }
+        // Permitir Enter para agregar tarea
+        const inputQ2 = document.getElementById('input-q2');
+        if (inputQ2) {
+          inputQ2.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              addTask('q2', 'input-q2', null, 'date-q2');
+            }
+          });
+        }
+      }
+    }
+
+    // --- DELEGAR: agrega select de usuarios y campo manual ---
+    function fillDelegateSelect() {
+      const select = document.getElementById('delegate-to');
+      if (!select) return;
+      // Limpiar opciones
+      select.innerHTML = '';
+      // Opción por defecto
+      const optDefault = document.createElement('option');
+      optDefault.value = '';
+      optDefault.textContent = 'Seleccionar persona';
+      select.appendChild(optDefault);
+      // Agregar usuarios normales
+      const users = getUsers().filter(u => u.role !== 'admin');
+      users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.username;
+        opt.textContent = u.username;
+        select.appendChild(opt);
+      });
+      // Opción para ingresar usuario manualmente
+      const optManual = document.createElement('option');
+      optManual.value = '__custom__';
+      optManual.textContent = 'Ingresar usuario...';
+      select.appendChild(optManual);
+    }
+
+    // Mostrar/ocultar input manual en DELEGAR
+    function toggleCustomDelegateInput() {
+      const select = document.getElementById('delegate-to');
+      const customInput = document.getElementById('custom-delegate-input');
+      if (!select || !customInput) return;
+      if (select.value === '__custom__') {
+        customInput.style.display = 'inline-block';
+      } else {
+        customInput.style.display = 'none';
+        customInput.value = '';
+      }
+    }
+
+    // Asegura que los campos estén presentes al mostrar el main
+    function showMain() {
+      document.getElementById('login-page').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      document.getElementById('logout-btn').style.display = 'inline-block';
+      document.getElementById('admin-panel').style.display = 'none';
+      document.getElementById('navbar-user').textContent = currentUser ? `Usuario: ${currentUser.username} (${currentUser.role})` : '';
+
+      // Mostrar/ocultar el módulo de gestión de moldes según el rol del usuario
+      const gestionMoldes = document.getElementById('gestion-moldes');
+      if (gestionMoldes) {
+        gestionMoldes.style.display = currentUser && currentUser.role === 'admin' ? 'block' : 'none';
+      }
+
+      ensurePlanificarInputs();
+      fillDelegateSelect();
+      // Mostrar/ocultar input manual según selección
+      const delegateTo = document.getElementById('delegate-to');
+      if (delegateTo) delegateTo.onchange = toggleCustomDelegateInput;
+      // Asegura que el input manual esté oculto al entrar
+      const customInput = document.getElementById('custom-delegate-input');
+      if (customInput) customInput.style.display = 'none';
+      loadTasks();
+      cleanDelegarForCurrentUser();
+      loadCompletedTasks();
+      cargarTodasLasListas();
+      initDropdownAndMoldesModules();
+    }
+
+    // --- Solución ReferenceError: initDropdownAndMoldesModules ---
+    function initDropdownAndMoldesModules() {
+      // Esta función puede ser implementada según sea necesario
+    }
+
+    // --- Solución ReferenceError: agregarItem ---
+    function agregarItem(tipo) {
+      // Mapeo de tipo a IDs de input y lista
+      const inputId = `new-${tipo}`;
+      let listaId = '';
+      if (tipo === 'molde') listaId = 'lista-moldes';
+      else if (tipo === 'pieza') listaId = 'lista-piezas';
+      else if (tipo === 'ubicacion') listaId = 'lista-ubicaciones';
+      else if (tipo === 'responsable') listaId = 'lista-responsables';
+      else listaId = `lista-${tipo}`;
+      const input = document.getElementById(inputId);
+      const ul = document.getElementById(listaId);
+      if (!input || !ul) return;
+      const valor = input.value.trim();
+      if (!valor) return;
+      // Evitar duplicados
+      const existe = Array.from(ul.children).some(li => li.textContent.trim() === valor);
+      if (existe) {
+        alert('Este elemento ya existe en la lista.');
+        return;
+      }
+      const li = document.createElement('li');
+      li.textContent = valor;
+      ul.appendChild(li);
+      input.value = '';
+      input.focus();
+    }
+
+    // --- Solución ReferenceError: cargarTodasLasListas ---
+    function cargarTodasLasListas() {
+      listasTipos.forEach(tipo => cargarLista(tipo));
+      cargarListasDesplegablesGestionMoldes();
+    }
+
+    // --- Solución ReferenceError: cleanDelegarForCurrentUser ---
+    function cleanDelegarForCurrentUser() {
+      // Esta función puede ser implementada según sea necesario para limpiar el módulo Delegar
+    }
+
+    // --- Funciones auxiliares para evitar errores de referencia ---
+function markComplete(button) {
+  const li = button.closest('li');
+  if (!li) return;
+
+  const taskSpan = li.querySelector('span');
+  if (!taskSpan) return;
+
+  // Obtener el contenido de la tarea
+  const taskContent = taskSpan.innerHTML;
+  const timestamp = new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+
+  // Crear la tarea completada
+  const completedTasksList = document.getElementById('completed-tasks-list');
+  if (completedTasksList) {
+    const newLi = document.createElement('li');
+    const contentSpan = document.createElement('span');
+    contentSpan.className = 'task-content';
+    contentSpan.innerHTML = `${taskContent}<small style="margin-left:8px;">(Completada: ${timestamp})</small>`;
+    newLi.appendChild(contentSpan);
+
+    // Agregar botón para eliminar permanentemente
+    const permDeleteBtn = document.createElement('button');
+    permDeleteBtn.className = 'delete-completed';
+    permDeleteBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M9 10v6"/><path d="M15 10v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="1" y1="6" x2="23" y2="6"/></svg>';
+    permDeleteBtn.title = 'Eliminar permanentemente';
+    permDeleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      if(confirm('¿Eliminar esta tarea completada permanentemente?')) {
+        newLi.remove();
+        saveCompletedTasks();
+      }
+    };
+    newLi.appendChild(permDeleteBtn);
+
+    // Agregar la tarea completada al principio de la lista
+    completedTasksList.insertBefore(newLi, completedTasksList.firstChild);
+    saveCompletedTasks();
+  }
+
+  // Eliminar la tarea original
+  li.remove();
+  saveTasks();
+}
+
+function deleteTask(button) {
+  const li = button.closest('li');
+  if (li) li.remove();
+  if (typeof saveTasks === 'function') saveTasks();
+}
+// --- Gestión de listas desplegables persistentes ---
+const listasTipos = ['moldes', 'piezas', 'ubicaciones', 'responsables'];
+
+function getListasKey(tipo) {
+  return getUserKey('lista_' + tipo);
+}
+
+function guardarLista(tipo) {
+  const ul = document.getElementById('lista-' + tipo);
+  if (!ul) return;
+  const datos = Array.from(ul.children).map(li => {
+    const span = li.querySelector('.dato-texto');
+    return span ? span.textContent.trim() : li.textContent.trim();
+  });
+  localStorage.setItem(getListasKey(tipo), JSON.stringify(datos));
+}
+
+function cargarLista(tipo) {
+  const ul = document.getElementById('lista-' + tipo);
+  if (!ul) return;
+  ul.innerHTML = '';
+  const datos = JSON.parse(localStorage.getItem(getListasKey(tipo)) || '[]');
+  datos.forEach(valor => {
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.alignItems = 'center';
+    li.style.justifyContent = 'space-between';
+    li.style.gap = '6px';
+    // Texto del dato
+    const span = document.createElement('span');
+    span.className = 'dato-texto';
+    span.textContent = valor;
+    // Botón eliminar
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.title = 'Eliminar';
+    btn.style.background = 'none';
+    btn.style.border = 'none';
+    btn.style.padding = '2px';
+    btn.style.marginLeft = '4px';
+    btn.style.cursor = 'pointer';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    btn.onclick = function() {
+      li.remove();
+      guardarLista(tipo);
+      cargarListasDesplegablesGestionMoldes();
+    };
+    li.appendChild(span);
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+}
+
+function cargarTodasLasListas() {
+  listasTipos.forEach(tipo => cargarLista(tipo));
+  cargarListasDesplegablesGestionMoldes();
+}
+
+function agregarDatoListaUnificada() {
+  const valor = document.getElementById('nuevo-dato').value.trim();
+  const tipo = document.getElementById('tipo-lista').value;
+  if (!valor) return;
+  const ul = document.getElementById('lista-' + tipo);
+  if (!ul) return;
+  // Evitar duplicados
+  const existe = Array.from(ul.children).some(li => li.querySelector('.dato-texto') && li.querySelector('.dato-texto').textContent.trim() === valor);
+  if (existe) {
+    alert('Este elemento ya existe en la lista.');
+    return;
+  }
+  const li = document.createElement('li');
+  li.style.display = 'flex';
+  li.style.alignItems = 'center';
+  li.style.justifyContent = 'space-between';
+  li.style.gap = '6px';
+  // Texto del dato
+  const span = document.createElement('span');
+  span.className = 'dato-texto';
+  span.textContent = valor;
+  // Botón eliminar
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.title = 'Eliminar';
+  btn.style.background = 'none';
+  btn.style.border = 'none';
+  btn.style.padding = '2px';
+  btn.style.marginLeft = '4px';
+  btn.style.cursor = 'pointer';
+  btn.style.display = 'flex';
+  btn.style.alignItems = 'center';
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  btn.onclick = function() {
+    li.remove();
+    guardarLista(tipo);
+    cargarListasDesplegablesGestionMoldes();
+  };
+  li.appendChild(span);
+  li.appendChild(btn);
+  ul.appendChild(li);
+  document.getElementById('nuevo-dato').value = '';
+  document.getElementById('nuevo-dato').focus();
+  guardarLista(tipo);
+  cargarListasDesplegablesGestionMoldes();
+}
+
+// --- Gestión de listas desplegables en Gestión de Moldes ---
+function cargarListasDesplegablesGestionMoldes() {
+  function obtenerValoresLista(idLista) {
+    const ul = document.getElementById(idLista);
+    if (!ul) return [];
+    return Array.from(ul.children).map(li => {
+      const span = li.querySelector('.dato-texto');
+      return span ? span.textContent.trim() : li.textContent.trim();
+    });
+  }
+  // Cargar Moldes
+  const moldes = obtenerValoresLista('lista-moldes');
+  const selectMolde = document.getElementById('moldes-molde');
+  if (selectMolde) {
+    selectMolde.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Seleccionar molde';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    selectMolde.appendChild(placeholder);
+    moldes.forEach(molde => {
+      const opt = document.createElement('option');
+      opt.value = molde;
+      opt.textContent = molde;
+      selectMolde.appendChild(opt);
+    });
+  }
+  // Cargar Piezas
+  const piezas = obtenerValoresLista('lista-piezas');
+  const selectPieza = document.getElementById('moldes-pieza');
+  if (selectPieza) {
+    selectPieza.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Seleccionar pieza';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    selectPieza.appendChild(placeholder);
+    piezas.forEach(pieza => {
+      const opt = document.createElement('option');
+      opt.value = pieza;
+      opt.textContent = pieza;
+      selectPieza.appendChild(opt);
+    });
+  }
+  // Cargar Ubicaciones
+  const ubicaciones = obtenerValoresLista('lista-ubicaciones');
+  const selectUbicacion = document.getElementById('moldes-ubicacion');
+  if (selectUbicacion) {
+    selectUbicacion.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Seleccionar ubicación';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    selectUbicacion.appendChild(placeholder);
+    ubicaciones.forEach(ubicacion => {
+      const opt = document.createElement('option');
+      opt.value = ubicacion;
+      opt.textContent = ubicacion;
+      selectUbicacion.appendChild(opt);
+    });
+  }
+  // Cargar Responsables
+  const responsables = obtenerValoresLista('lista-responsables');
+  const selectResponsable = document.getElementById('moldes-responsable');
+  if (selectResponsable) {
+    selectResponsable.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Seleccionar responsable';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    selectResponsable.appendChild(placeholder);
+    responsables.forEach(responsable => {
+      const opt = document.createElement('option');
+      opt.value = responsable;
+      opt.textContent = responsable;
+      selectResponsable.appendChild(opt);
+    });
+  }
+}
+</script>
+</body>
+</html>
